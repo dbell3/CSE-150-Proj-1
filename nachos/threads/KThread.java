@@ -277,6 +277,21 @@ public class KThread {
 
 	Lib.assertTrue(this != currentThread);
 
+    boolean interrupts = Machine.interrupt().disable();
+
+    //Only run if status is not finished
+    if(this.status != statusFinished){
+        //Create new ThreadQueue
+        ThreadQueue queue = new ThreadedKernel.scheduler.newThreadQueue(true);
+        //add this to queue
+        queue.acquire(this);
+
+        while(this.status != statusFinished){
+            yield();
+        }
+    }
+
+    Machine.interrupt().restore(interrupts);
     }
 
     /**

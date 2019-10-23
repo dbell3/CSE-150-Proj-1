@@ -23,14 +23,14 @@ public final class Machine {
 	Lib.assertTrue(Machine.args == null);
 	Machine.args = args;
 
-	processArgs();
-
-	Config.load(configFileName);
-
 	// get the current directory (.)
 	baseDirectory = new File(new File("").getAbsolutePath());
 	// get the nachos directory (./nachos)
 	nachosDirectory = new File(baseDirectory, "nachos");
+
+	processArgs();
+
+	Config.load(configFileName);
 
 	String testDirectoryName =
 	    Config.getString("FileSystem.testDirectory");
@@ -106,11 +106,11 @@ public final class Machine {
      * @return	the command line arguments passed to Nachos.
      */
     public static String[] getCommandLineArguments() {
-	String[] result = new String[args.length];
+		String[] result = new String[args.length];
 
-	System.arraycopy(args, 0, result, 0, args.length);
+		System.arraycopy(args, 0, result, 0, args.length);
 
-	return result;
+		return result;
     }
 
     private static void processArgs() {
@@ -150,6 +150,10 @@ public final class Machine {
 		else if (arg.equals("-z")) {
 		    System.out.print(copyright);
 		    System.exit(1);
+		}
+		else if (arg.equals("-f")) {
+			File config = new File(baseDirectory, args[i++]);
+			configFileName  = config.getAbsolutePath();
 		}
 		// these switches are reserved for the autograder
 		else if (arg.equals("-[]")) {

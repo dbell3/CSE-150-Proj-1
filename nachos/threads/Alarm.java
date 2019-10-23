@@ -27,7 +27,7 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
-	KThread.currentThread().yield();
+	    KThread.currentThread().yield();
     }
 
     /**
@@ -46,8 +46,26 @@ public class Alarm {
      */
     public void waitUntil(long x) {
 	// for now, cheat just to get something working (busy waiting is bad)
-	long wakeTime = Machine.timer().getTime() + x;
-	while (wakeTime > Machine.timer().getTime())
-	    KThread.yield();
+	    long wakeTime = Machine.timer().getTime() + x;
+    
+        KThread t = currentThread;
+
+        boolean interrupt = Machine.interrupt().disable();
+
+        TTime tempVariable = new TTime(t, wakeTime);
+        sleepingQueue.add(tempVariable);
+        t.sleep();
+
+        Machine.interrupt().restore(interrupt);
+    }
+
+    private PriorityQueue<TTime> sleepingQueue = new PriorityQueue<>();
+}
+class TTime{
+    private KThread t;
+    private long wakeTime;
+    public TTime(KThread t, long wakeTime){
+        this.t = t;
+        this.wakeTime = wakeTime;
     }
 }

@@ -17,58 +17,58 @@ public final class Machine {
      *
      * @param	args	the command line arguments.
      */
-    public static void main(final String[] args) {
-	System.out.print("nachos 5.0j initializing...");
-	
-	Lib.assertTrue(Machine.args == null);
-	Machine.args = args;
+	public static void main(final String[] args) {
+		System.out.print("nachos 5.0j initializing...");
 
-	// get the current directory (.)
-	baseDirectory = new File(new File("").getAbsolutePath());
-	// get the nachos directory (./nachos)
-	nachosDirectory = new File(baseDirectory, "nachos");
+		Lib.assertTrue(Machine.args == null);
+		Machine.args = args;
 
-	processArgs();
+		// get the current directory (.)
+		baseDirectory = new File(new File("").getAbsolutePath());
+		// get the nachos directory (./nachos)
+		nachosDirectory = new File(baseDirectory, "nachos");
 
-	Config.load(configFileName);
+		processArgs();
 
-	String testDirectoryName =
-	    Config.getString("FileSystem.testDirectory");
+		Config.load(configFileName);
 
-	// get the test directory
-	if (testDirectoryName != null) {
-	    testDirectory = new File(testDirectoryName);
+		String testDirectoryName = Config.getString("FileSystem.testDirectory");
+
+		// get the test directory
+		if (testDirectoryName != null) {
+			testDirectory = new File(testDirectoryName);
+		} else {
+			// use ../test
+			testDirectory = new File(baseDirectory.getParentFile(), "test");
+		}
+
+		securityManager = new NachosSecurityManager(testDirectory);
+		privilege = securityManager.getPrivilege();
+
+		privilege.machine = new MachinePrivilege();
+
+		TCB.givePrivilege(privilege);
+		privilege.stats = stats;
+
+		securityManager.enable();
+		createDevices();
+		checkUserClasses();
+
+		autoGrader = (AutoGrader) Lib.constructObject(autoGraderClassName);
+
+		new TCB().start(new Runnable() {
+			public void run() {
+				autoGrader.start(privilege);
+			}
+		});
 	}
-	else {
-	    // use ../test
-	    testDirectory = new File(baseDirectory.getParentFile(), "test");
-	}
-
-	securityManager = new NachosSecurityManager(testDirectory);
-	privilege = securityManager.getPrivilege();
-
-	privilege.machine = new MachinePrivilege();
-
-	TCB.givePrivilege(privilege);
-	privilege.stats = stats;
-
-	securityManager.enable();
-	createDevices();
-	checkUserClasses();
-
-	autoGrader = (AutoGrader) Lib.constructObject(autoGraderClassName);
-
-	new TCB().start(new Runnable() {
-	    public void run() { autoGrader.start(privilege); }
-	});
-    }
 
     /**
      * Yield to non-Nachos threads. Use in non-preemptive JVM's to give
      * non-Nachos threads a chance to run.
      */
     public static void yield() {
-	Thread.yield();
+		Thread.yield();
     }
 
     /**

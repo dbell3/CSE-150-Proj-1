@@ -10,7 +10,7 @@
             "request": "launch",
             "mainClass": "nachos.machine.Machine",
             "projectName": "nachos", 
-            "args": "-f \\src\\nachos\\proj1\\nachos.conf"
+            "args": "-d tq -f \\src\\nachos\\proj1\\nachos.conf"
         }
     ]
 }

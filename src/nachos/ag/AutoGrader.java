@@ -29,25 +29,23 @@ public class AutoGrader {
      * 				machine.
      */
     public void start(Privilege privilege) {
-	Lib.assertTrue(this.privilege == null,
-		   "start() called multiple times");
-	this.privilege = privilege;
+        Lib.assertTrue(this.privilege == null, "start() called multiple times");
+        this.privilege = privilege;
 
-	String[] args = Machine.getCommandLineArguments();
+        String[] args = Machine.getCommandLineArguments();
 
-	extractArguments(args);
+        extractArguments(args);
 
-	System.out.print(" grader");
+        System.out.print(" grader");
 
-	init();
+        init();
 
-	System.out.print("\n");	
+        System.out.print("\n");
 
-	kernel =
-	    (Kernel) Lib.constructObject(Config.getString("Kernel.kernel"));
-	kernel.initialize(args);
+        kernel = (Kernel) Lib.constructObject(Config.getString("Kernel.kernel"));
+        kernel.initialize(args);
 
-	run();
+        run();
     }
 
     private void extractArguments(String[] args) {

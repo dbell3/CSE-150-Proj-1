@@ -46,22 +46,22 @@ public final class Interrupt {
      * @param	privilege      	encapsulates privileged access to the Nachos
      *				machine.
      */
-    public Interrupt(Privilege privilege) {
-	System.out.print(" interrupt");
-	
-	this.privilege = privilege;
-	privilege.interrupt = new InterruptPrivilege();
-	
-	enabled = false;
-	pending = new TreeSet<PendingInterrupt>();
-    }
+	public Interrupt(Privilege privilege) {
+		System.out.print(" interrupt");
+
+		this.privilege = privilege;
+		privilege.interrupt = new InterruptPrivilege();
+
+		enabled = false;
+		pending = new TreeSet<PendingInterrupt>();
+	}
 
     /**
      * Enable interrupts. This method has the same effect as
      * <tt>setStatus(true)</tt>.
      */    
     public void enable() {
-	setStatus(true);
+		setStatus(true);
     }
 
     /**

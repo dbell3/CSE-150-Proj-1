@@ -27,78 +27,75 @@ public class Semaphore {
      *
      * @param	initialValue	the initial value of this semaphore.
      */
-    public Semaphore(int initialValue) {
-	value = initialValue;
-    }
+	public Semaphore(int initialValue) {
+		value = initialValue;
+	}
 
     /**
      * Atomically wait for this semaphore to become non-zero and decrement it.
      */
-    public void P() {
-	boolean intStatus = Machine.interrupt().disable();
+	public void P() {
+		boolean intStatus = Machine.interrupt().disable();
 
-	if (value == 0) {
-	    waitQueue.waitForAccess(KThread.currentThread());
-	    KThread.sleep();
-	}
-	else {
-	    value--;
-	}
+		if (value == 0) {
+			waitQueue.waitForAccess(KThread.currentThread());
+			KThread.sleep();
+		} else {
+			value--;
+		}
 
-	Machine.interrupt().restore(intStatus);
-    }
+		Machine.interrupt().restore(intStatus);
+	}
 
     /**
      * Atomically increment this semaphore and wake up at most one other thread
      * sleeping on this semaphore.
      */
-    public void V() {
-	boolean intStatus = Machine.interrupt().disable();
+	public void V() {
+		boolean intStatus = Machine.interrupt().disable();
 
-	KThread thread = waitQueue.nextThread();
-	if (thread != null) {
-	    thread.ready();
-	}
-	else {
-	    value++;
-	}
-	
-	Machine.interrupt().restore(intStatus);
-    }
+		KThread thread = waitQueue.nextThread();
+		if (thread != null) {
+			thread.ready();
+		} else {
+			value++;
+		}
 
-    private static class PingTest implements Runnable {
-	PingTest(Semaphore ping, Semaphore pong) {
-	    this.ping = ping;
-	    this.pong = pong;
-	}
-	
-	public void run() {
-	    for (int i=0; i<10; i++) {
-		ping.P();
-		pong.V();
-	    }
+		Machine.interrupt().restore(intStatus);
 	}
 
-	private Semaphore ping;
-	private Semaphore pong;
-    }
+	private static class PingTest implements Runnable {
+		PingTest(Semaphore ping, Semaphore pong) {
+			this.ping = ping;
+			this.pong = pong;
+		}
+
+		public void run() {
+			for (int i = 0; i < 10; i++) {
+				ping.P();
+				pong.V();
+			}
+		}
+
+		private Semaphore ping;
+		private Semaphore pong;
+	}
 
     /**
      * Test if this module is working.
      */
-    public static void selfTest() {
-	Semaphore ping = new Semaphore(0);
-	Semaphore pong = new Semaphore(0);
+	public static void selfTest() {
+		Semaphore ping = new Semaphore(0);
+		Semaphore pong = new Semaphore(0);
 
-	new KThread(new PingTest(ping, pong)).setName("ping").fork();
+		new KThread(new PingTest(ping, pong)).setName("ping").fork();
 
-	for (int i=0; i<10; i++) {
-	    ping.V();
-	    pong.P();
+		for (int i = 0; i < 10; i++) {
+			ping.V();
+			pong.P();
+		}
 	}
-    }
 
     private int value;
-    private ThreadQueue waitQueue =
-	ThreadedKernel.scheduler.newThreadQueue(false);
+    private ThreadQueue waitQueue = ThreadedKernel.scheduler.newThreadQueue(false);
 }

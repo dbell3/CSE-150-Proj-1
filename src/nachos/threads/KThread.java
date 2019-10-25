@@ -420,6 +420,7 @@ public class KThread {
     public static void selfTest() {
         Lib.debug(dbgThread, "Enter KThread.selfTest");
         new KThread(new PingTest(1)).setName("Ft-1").fork();
+        new KThread(new PingTest(1)).setName("Ft-2").fork();
         new PingTest(0).run();
     }
 

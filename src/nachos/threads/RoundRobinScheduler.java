@@ -41,7 +41,7 @@ public class RoundRobinScheduler extends Scheduler {
 
 			waitQueue.add(thread);
 
-			print();
+			// print();
 		}
 
 		/**

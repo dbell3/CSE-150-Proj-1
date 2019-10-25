@@ -2,9 +2,14 @@ package nachos.threads;
 
 import nachos.machine.*;
 
-import java.util.TreeSet;
+// import java.util.TreeSet;
+import java.util.LinkedList;
+import java.util.Iterator;
+import java.util.Random;
 // import java.util.HashSet;
 // import java.util.Iterator;
+
+import org.w3c.dom.ranges.Range;
 
 /**
  * A scheduler that chooses threads based on their priorities.
@@ -130,10 +135,18 @@ public class PriorityScheduler extends Scheduler {
 			this.transferPriority = transferPriority;
 		}
 
+		// adds the thread into the queue
 		public void waitForAccess(KThread thread) {
+			//Disable interrupts
 			Lib.assertTrue(Machine.interrupt().disabled());
+
 			getThreadState(thread).waitForAccess(this);
-			print();
+
+			Lib.debug(dbgQueue, thread.getName() + " ready to work");
+			Lib.debug(dbgQueue, printQueue());
+
+			 // setting random priorities to test things 
+			//  getThreadState(thread).setPriority((int) (Math.random()*7) + 1);
 		}
 
 		public void acquire(KThread thread) {
@@ -144,10 +157,15 @@ public class PriorityScheduler extends Scheduler {
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled());
 			
+			// If waitQueue is empty
 			if (waitQueue.isEmpty())
 				return null;
 
-			return waitQueue.pollFirst().thread;
+			KThread thread = pickNextThread().thread;
+
+			Lib.debug(dbgQueue, printQueue());
+			Lib.debug(dbgQueue, thread.getName() + " PoP to do work");
+			return thread;
 		}
 
 		/**
@@ -158,22 +176,44 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		protected ThreadState pickNextThread() {
 			// implement me
-			return null;
-		}
-
-
-		// Print funcitn for debugging
-		public void print() {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			Lib.debug(dbgThread, "--Ready Queue: " + waitQueue.size() + " items");
 
-			System.out.print("[ ");
-			for(ThreadState tstate: waitQueue){
-				System.out.print((KThread) tstate.thread + " ,");
-			}
-			System.out.println(" ]");
+			// // Make sure that the Queue is not empty
+			if (waitQueue.isEmpty())
+				// If it is then return null
+				return null;
+
+
+			// Remove and return the first item in the Queue
+			ThreadState firstItem = waitQueue.removeFirst();
+
+			// return null;
+			return firstItem;
 		}
 
+		// Print function for debugging
+		public void print() {
+		// 	Lib.assertTrue(Machine.interrupt().disabled());
+		// 	Lib.debug(dbgThread, "--Ready Queue: " + waitQueue.size() + " items");
+
+		// 	System.out.print("[ ");
+		// 	for(ThreadState tstate: waitQueue){
+		// 		System.out.print((KThread) tstate.thread + "**P:" + tstate.priority + "**, ");
+		// 	}
+		// 	System.out.println(" ]");
+		}
+
+		public String printQueue() {
+			Lib.assertTrue(Machine.interrupt().disabled());
+
+			String temp= "--PriorityQueue: " + waitQueue.size() + " items [ ";
+			for(ThreadState tstate: waitQueue){
+				temp += tstate.thread.getName() + " **Priority:" + tstate.priority + ", ";
+			}
+			temp += " ]";
+
+			return temp;
+		}
 		/**
 		 * <tt>true</tt> if this queue should transfer priority from waiting threads to
 		 * the owning thread.
@@ -181,10 +221,11 @@ public class PriorityScheduler extends Scheduler {
 		public boolean transferPriority;
 
 		/** Varible used for debugging */
-		private static final char dbgThread = 'q';
+		// private static final char dbgThread = 't';
+		private static final char dbgQueue = 'q';
 
 		/** Queue to that keeps the threads */
-		private TreeSet<ThreadState> waitQueue = new TreeSet<ThreadState>();
+		private LinkedList<ThreadState> waitQueue = new LinkedList<ThreadState>();
 	}
 
     /**
@@ -194,7 +235,8 @@ public class PriorityScheduler extends Scheduler {
      *
      * @see	nachos.threads.KThread#schedulingState
      */
-	protected class ThreadState implements Comparable {
+	// protected class ThreadState implements Comparable {
+	protected class ThreadState {
 		/**
 		 * Allocate a new <tt>ThreadState</tt> object and associate it with the
 		 * specified thread.
@@ -203,10 +245,15 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public ThreadState(KThread thread) {
 			this.thread = thread;
-
 			setPriority(priorityDefault);
 		}
 
+		// Set the priority
+		public ThreadState(KThread thread, int priority) {
+			this.thread = thread;
+
+			// setPriority();
+		}
 
 		/**
 		 * CompareTo method is needed in order to use TreeSet
@@ -252,8 +299,6 @@ public class PriorityScheduler extends Scheduler {
 				return;
 
 			this.priority = priority;
-
-			// implement me
 		}
 
 		/**
@@ -268,11 +313,9 @@ public class PriorityScheduler extends Scheduler {
 		 * @see nachos.threads.ThreadQueue#waitForAccess
 		 */
 		public void waitForAccess(PriorityQueue pQueue) {
-			// implement me
 			Lib.assertTrue(Machine.interrupt().disabled());
 
 			pQueue.waitQueue.add(this);
-			
 		}
 
 		// public KThread nextThread() {
@@ -295,8 +338,6 @@ public class PriorityScheduler extends Scheduler {
 			Lib.assertTrue(Machine.interrupt().disabled());
 
 			Lib.assertTrue(pQueue.waitQueue.isEmpty());
-
-			System.out.println("");
 		}
 
 		/** The thread with which this object is associated. */

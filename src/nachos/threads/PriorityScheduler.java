@@ -142,11 +142,8 @@ public class PriorityScheduler extends Scheduler {
 
 			getThreadState(thread).waitForAccess(this);
 
-			Lib.debug(dbgQueue, thread.getName() + " ready to work");
+			Lib.debug(dbgQueue, thread.getName() + " ready to grab lock");
 			Lib.debug(dbgQueue, printQueue());
-
-			 // setting random priorities to test things 
-			//  getThreadState(thread).setPriority((int) (Math.random()*7) + 1);
 		}
 
 		public void acquire(KThread thread) {
@@ -164,7 +161,7 @@ public class PriorityScheduler extends Scheduler {
 			KThread thread = pickNextThread().thread;
 
 			Lib.debug(dbgQueue, printQueue());
-			Lib.debug(dbgQueue, thread.getName() + " PoP to do work");
+			Lib.debug(dbgQueue, thread.getName() + " grabing lock");
 			return thread;
 		}
 
@@ -183,30 +180,34 @@ public class PriorityScheduler extends Scheduler {
 				// If it is then return null
 				return null;
 
+			ThreadState temp = waitQueue.removeFirst();
+			int index = 0, out = 0;
 
+			// Search the whole list and pull the highest
+			for (ThreadState threadState : waitQueue) {
+				if(threadState.priority > temp.priority){
+					temp = threadState;
+					out = index;
+				}
+				index++;
+			}
+
+			waitQueue.remove(out);
 			// Remove and return the first item in the Queue
-			ThreadState firstItem = waitQueue.removeFirst();
+			// ThreadState firstItem = waitQueue.removeFirst();
 
 			// return null;
-			return firstItem;
+			return temp;
 		}
 
-		// Print function for debugging
-		public void print() {
-		// 	Lib.assertTrue(Machine.interrupt().disabled());
-		// 	Lib.debug(dbgThread, "--Ready Queue: " + waitQueue.size() + " items");
-
-		// 	System.out.print("[ ");
-		// 	for(ThreadState tstate: waitQueue){
-		// 		System.out.print((KThread) tstate.thread + "**P:" + tstate.priority + "**, ");
-		// 	}
-		// 	System.out.println(" ]");
-		}
-
+		/**
+		 * Printing the Queue for testing purposes
+		 * @return String to print on command line
+		 */
 		public String printQueue() {
 			Lib.assertTrue(Machine.interrupt().disabled());
 
-			String temp= "--PriorityQueue: " + waitQueue.size() + " items [ ";
+			String temp= "--Priority Ready Queue: " + waitQueue.size() + " items [ ";
 			for(ThreadState tstate: waitQueue){
 				temp += tstate.thread.getName() + " **Priority:" + tstate.priority + ", ";
 			}
@@ -214,6 +215,7 @@ public class PriorityScheduler extends Scheduler {
 
 			return temp;
 		}
+
 		/**
 		 * <tt>true</tt> if this queue should transfer priority from waiting threads to
 		 * the owning thread.
@@ -226,6 +228,12 @@ public class PriorityScheduler extends Scheduler {
 
 		/** Queue to that keeps the threads */
 		private LinkedList<ThreadState> waitQueue = new LinkedList<ThreadState>();
+
+		@Override
+		public void print() {
+			// TODO Auto-generated method stub
+
+		}
 	}
 
     /**
@@ -245,14 +253,8 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public ThreadState(KThread thread) {
 			this.thread = thread;
-			setPriority(priorityDefault);
-		}
-
-		// Set the priority
-		public ThreadState(KThread thread, int priority) {
-			this.thread = thread;
-
-			// setPriority();
+			// setting random Priorities for testing purposes
+			setPriority((int)(Math.random()*7)+1);
 		}
 
 		/**

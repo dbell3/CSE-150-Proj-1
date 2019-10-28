@@ -288,6 +288,17 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public int getEffectivePriority() {
 			// implement me
+			int effectivePriority;
+			if (!transferPriority) {
+				return priorityMinimum;
+			}else {
+				effectivePriority = priority;
+				for(ThreadState threadState : waitQueue) {
+					effectivePriority = threadState.priority;
+				}
+				transferPriority = false;
+				return effectivePriority;
+			}
 			return priority;
 		}
 
@@ -346,6 +357,8 @@ public class PriorityScheduler extends Scheduler {
 		protected KThread thread;
 		/** The priority of the associated thread. */
 		protected int priority;
+
+		
 	}
 
 	

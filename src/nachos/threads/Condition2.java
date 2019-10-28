@@ -21,7 +21,7 @@ public class Condition2 {
      *				<tt>wake()</tt>, or <tt>wakeAll()</tt>.
      */
     public Condition2(Lock conditionLock) {
-	this.conditionLock = conditionLock;
+	    this.conditionLock = conditionLock;
     }
 
     /**
@@ -31,11 +31,22 @@ public class Condition2 {
      * automatically reacquire the lock before <tt>sleep()</tt> returns.
      */
     public void sleep() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	    Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 
-	conditionLock.release();
+	    conditionLock.release();
 
-	conditionLock.acquire();
+        boolean interrupt = Machine.interrupt().disable();
+
+        //Add current thread to sleeping Queue
+        sleepQueue.add(KThread.currentTHread());
+
+        //Sleeps current thread.
+        //By default, KThread's sleep method sleeps current thread. No need to specify
+        KThread.sleep();
+
+        Machine.interrupt().restore(interrupt);
+
+	    conditionLock.acquire();
     }
 
     /**
@@ -43,7 +54,19 @@ public class Condition2 {
      * current thread must hold the associated lock.
      */
     public void wake() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	    Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+
+        //Check if queue contains sleeping threads
+        if(!sleepQueue.isEmpty()){
+            
+            boolean interrupt = Machine.interrupt().disable();
+
+            //KThread t = sleepQueue.remove(0);
+            KThread t = sleepingQueue.pop();
+            t.ready();
+
+            Machine.interrupt().restore(interrupt);
+        }
     }
 
     /**
@@ -51,8 +74,17 @@ public class Condition2 {
      * thread must hold the associated lock.
      */
     public void wakeAll() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	    Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+        while(!sleepQueue.isEmpty()){
+            wake();
+        }
     }
 
     private Lock conditionLock;
+
+    //Global queue for sleeping threads
+    //private Arraylist<KThread> sleepQueue = new Arraylist<>();
+
+    //Changed to linkedlist becuase better poping runtime complexity
+    private LinkedList<KThread> sleepQueue = new LinkedList<>();
 }

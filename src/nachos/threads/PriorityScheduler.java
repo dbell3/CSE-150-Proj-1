@@ -142,7 +142,7 @@ public class PriorityScheduler extends Scheduler {
 
 			getThreadState(thread).waitForAccess(this);
 
-			Lib.debug(dbgQueue, thread.getName() + " ready to grab lock");
+			Lib.debug(dbgQueue, thread.getName() + " release lock");
 			Lib.debug(dbgQueue, printQueue());
 		}
 
@@ -180,7 +180,7 @@ public class PriorityScheduler extends Scheduler {
 				// If it is then return null
 				return null;
 
-			ThreadState temp = waitQueue.removeFirst();
+			ThreadState temp = waitQueue.element();
 			int index = 0, out = 0;
 
 			// Search the whole list and pull the highest

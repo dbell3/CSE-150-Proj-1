@@ -285,6 +285,7 @@ public class KThread {
         ThreadQueue queue = new ThreadedKernel.scheduler.newThreadQueue(true);
         //add this to queue
         queue.acquire(this);
+        queue.waitForAccess(currentThread);
 
         while(this.status != statusFinished){
             yield();

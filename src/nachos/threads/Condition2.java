@@ -2,6 +2,8 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+import java.util.LinkedList;
+
 /**
  * An implementation of condition variables that disables interrupt()s for
  * synchronization.
@@ -38,7 +40,7 @@ public class Condition2 {
         boolean interrupt = Machine.interrupt().disable();
 
         //Add current thread to sleeping Queue
-        sleepQueue.add(KThread.currentTHread());
+        sleepQueue.add(KThread.currentThread());
 
         //Sleeps current thread.
         //By default, KThread's sleep method sleeps current thread. No need to specify
@@ -62,7 +64,7 @@ public class Condition2 {
             boolean interrupt = Machine.interrupt().disable();
 
             //KThread t = sleepQueue.remove(0);
-            KThread t = sleepingQueue.pop();
+            KThread t = sleepQueue.pop();
             t.ready();
 
             Machine.interrupt().restore(interrupt);
@@ -85,6 +87,6 @@ public class Condition2 {
     //Global queue for sleeping threads
     //private Arraylist<KThread> sleepQueue = new Arraylist<>();
 
-    //Changed to linkedlist becuase better poping runtime complexity
+    //Changed to linkedlist because better popping runtime complexity
     private LinkedList<KThread> sleepQueue = new LinkedList<>();
 }

@@ -57,7 +57,7 @@ public class Alarm {
     public void waitUntil(long x) {
 	    long wakeTime = Machine.timer().getTime() + x;
     
-        KThread t = currentThread;
+        KThread t = KThread.currentThread();
 
         boolean interrupt = Machine.interrupt().disable();
 

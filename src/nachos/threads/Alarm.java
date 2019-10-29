@@ -95,4 +95,8 @@ class TTime implements Comparable{
             return 0;
         }
     }
+    public int compareTo(Object n) {
+    	return 0;
+    }
+    
 }

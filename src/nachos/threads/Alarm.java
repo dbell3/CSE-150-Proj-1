@@ -27,12 +27,12 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
-	    long currentTime = Machine.timer.getTime();
+	    long currentTime = Machine.timer().getTime();
 
         boolean interrupt = Machine.interrupt().disable();
 
         while(sleepingQueue.size() > 0 && sleepingQueue.peek().getTime() <= currentTime){
-            KThread t = sleepingQueue.poll();
+            KThread t = sleepingQueue.poll().getThread();
             t.ready();
         }
         KThread.yield();
@@ -71,15 +71,18 @@ public class Alarm {
     private PriorityQueue<TTime> sleepingQueue = new PriorityQueue<>();
 }
 //Need to implement Comparable and override compareTo method since we plan on using this object in a priority queue
-private class TTime implements Comparable{
+class TTime implements Comparable{
     private KThread t;
     private long wakeTime;
     public TTime(KThread t, long wakeTime){
         this.t = t;
         this.wakeTime = wakeTime;
     }
-    public getTime(){
+    public long getTime (){
         return wakeTime;
+    }
+    public KThread getThread() {
+    	return t;
     }
     //Override compareTo method.
     //Only compare 2 TTime objects based on wakeTime

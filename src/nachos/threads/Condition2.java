@@ -88,5 +88,5 @@ public class Condition2 {
     //private Arraylist<KThread> sleepQueue = new Arraylist<>();
 
     //Changed to linkedlist because better popping runtime complexity
-    private LinkedList<KThread> sleepQueue = new LinkedList<>();
+    private LinkedList<KThread> sleepQueue = new LinkedList();
 }

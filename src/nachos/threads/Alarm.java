@@ -68,7 +68,7 @@ public class Alarm {
         Machine.interrupt().restore(interrupt);
     }
 
-    private PriorityQueue<TTime> sleepingQueue = new PriorityQueue<>();
+    private PriorityQueue<TTime> sleepingQueue = new PriorityQueue();
 }
 //Need to implement Comparable and override compareTo method since we plan on using this object in a priority queue
 class TTime implements Comparable{

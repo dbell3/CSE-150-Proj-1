@@ -54,7 +54,7 @@ public class Communicator {
         lock.acquire();
 
         while(speakerWaiting){
-
+        	speakerWaitQueue.sleep();
         }
 
         speakerWaiting = true;

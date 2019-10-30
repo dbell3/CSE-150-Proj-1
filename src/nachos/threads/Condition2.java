@@ -65,7 +65,7 @@ public class Condition2 {
 
             //KThread t = sleepQueue.remove(0);
             KThread t = sleepQueue.pop();
-            t.ready();
+            if(t != null) t.ready();
 
             Machine.interrupt().restore(interrupt);
         }

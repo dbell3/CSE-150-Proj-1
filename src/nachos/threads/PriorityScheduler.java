@@ -192,8 +192,9 @@ public class PriorityScheduler extends Scheduler {
 			}
 
 			// Increase priority of starving thread 
-			if(starvingThread.getEffectivePriority() <= 7 && transferPriority)
-				starvingThread.setPriority(starvingThread.getEffectivePriority()+1);
+			if(starvingThread.getEffectivePriority() <= priorityMaximum && transferPriority)
+				starvingThread.setPriority(temp.getEffectivePriority());
+				// starvingThread.setPriority(starvingThread.getEffectivePriority()+1);
 
 			// Remove ThreadState from queue
 			waitQueue.remove(out);

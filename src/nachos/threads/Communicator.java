@@ -61,7 +61,7 @@ public class Communicator {
 
         temp = word;
 
-        while(!listenerWaiting && messageRecieved){
+        while(!(listenerWaiting && messageRecieved)){
             listenerReceiveQueue.wake();
             speakerSpeakingQueue.sleep();
         }

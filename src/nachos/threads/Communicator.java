@@ -18,15 +18,10 @@ public class Communicator {
     private Lock lock;
     private Condition2 listenerWaitQueue;
     private Condition2 speakerWaitQueue;
-    //private Condition2 listenerReceiveQueue;
-    private Condition2 speakerSpeaking;
-
-    private int listenerNotPaired;
-    private int speakerNotSpeak;
-
+    private Condition2 listenerReceiveQueue;
+    private Condition2 speakerSpeakingQueue;
     private boolean listenerWaiting;
     private boolean speakerWaiting;
-
     private boolean messageRecieved;
     private int temp;
 
@@ -37,11 +32,8 @@ public class Communicator {
         //Initialize Condition Variables
         listenerWaitQueue = new Condition2(lock);
         speakerWaitQueue = new Condition2(lock);
-        //listenerReceiveQueue = new Condition2(lock);
-        speakerSpeaking = new Condition2(lock);
-
-        listenerNotPiared = 0;
-        speakerNotSpeak = 0;
+        listenerReceiveQueue = new Condition2(lock);
+        speakerSpeakingQueue = new Condition2(lock);
 
         listenerWaiting = false;
         speakerWaiting = false;
@@ -61,28 +53,23 @@ public class Communicator {
     public void speak(int word) {
         lock.acquire();
 
-        ++speakerNotSpeak;
-
-        while(listenerNotPaired == 0 || speakerWaiting){
+        while(speakerWaiting){
         	speakerWaitQueue.sleep();
         }
 
         speakerWaiting = true;
-        listenerWaitQueue.wake();
-        --listenerNotPaired;
+
         temp = word;
 
-        speakerSpeaking.sleep();
-        // while(!(listenerWaiting && messageRecieved)){
-        //     //listenerReceiveQueue.wake();
-        //     speakerSpeakingQueue.sleep();
-        // }
-
-        // listenerWaiting = false;
+        while(!(listenerWaiting && messageRecieved)){
+            listenerReceiveQueue.wake();
+            speakerSpeakingQueue.sleep();
+        }
+        listenerWaiting = false;
         speakerWaiting = false;
-        //messageRecieved = false;
-        if(speakerNotSpeak > 0) speakerWaitQueue.wake();
-        //listenerWaitQueue.wake();
+        messageRecieved = false;
+        speakerWaitQueue.wake();
+        listenerWaitQueue.wake();
 
         lock.release();
     }
@@ -95,23 +82,18 @@ public class Communicator {
      */    
     public int listen() {
         lock.acquire();
-
-        ++listenerNotPiared;
-
-        if(speakerNotSpeak > 0 && !speakerWaiting && !listenerWaiting){
-            speakerWaitQueue.wake();
-            --speakerNotSpeak;
-            // messageRecieved = true;
-            listenerWaiting = true;
+    
+        while(listenerWaiting){
+            listenerWaitQueue.sleep();
         }
-        // listenerWaiting = true;
-        listenerWaitQueue.sleep()
-        // while(!speakerWaiting){
-        //     listenerReceiveQueue.sleep();
-        // }
+        listenerWaiting = true;
 
-        speakerSpeaking.wake();
-        // messageRecieved = true;
+        while(!speakerWaiting){
+            listenerReceiveQueue.sleep();
+        }
+
+        speakerSpeakingQueue.wake();
+        messageRecieved = true;
 
         lock.release();
 

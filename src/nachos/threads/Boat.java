@@ -74,14 +74,14 @@ public class Boat {
 			}
 		};
 
-		boolean intStatus = Machine.interrupt().disable(); // prevent context switch until done spawning
+		boolean intStatus = Machine.interrupt().disable(); // prevent switch until done with spawning
 
-		for (int i = 0; i < adults; ++i) {
+		for (int i = 0; i < adults; i++) {
 			KThread t = new KThread(A);
 			t.fork();
 		}
 
-		for (int i = 0; i < children; ++i) {
+		for (int i = 0; i < children; i++) {
 			KThread t = new KThread(C);
 			t.fork();
 		}
@@ -112,6 +112,7 @@ public class Boat {
 			PermitOnBoat.acquire();// setting up the boat logic for adults (From psudocode)
 			if (BoatAtOahu && AtOahu && BoatCapacity == 0 && (AllowAdult || AmmChildrenAtOahu == 0) && !Done
 					&& AmmChildrenAtOahu < 2) {
+
 				bg.AdultRowToMolokai(); // go to Molokai
 
 				OahuPopulation.acquire();
@@ -128,7 +129,7 @@ public class Boat {
 			}
 			if (!Done && !AtOahu)
 				Finished.sleep(); // pull asleep
-			PermitOnBoat.release();// relace boat
+			PermitOnBoat.release();// release boat
 		}
 		return; // done with adult thread set up
 	}
@@ -153,11 +154,11 @@ public class Boat {
 				AmmChildrenAtOahu--; // subtract from the population of children at Oahu
 				OahuPopulation.release();
 				AtOahu = false; // no longer at Oahu
-				if ((AmmAdultsAtOahu + AmmChildrenAtOahu) == 0) // if Oahu population = 0
+				if ((AmmAdultsAtOahu + AmmChildrenAtOahu) == 0) // if no one left on Oahu
 				{
 					Done = true; // flag other threads to finish
 					bg.ChildRowToMolokai(); // leave to Molokai
-					if (BoatCapacity == 2) // if boat has 2 children in it
+					if (BoatCapacity == 2) // if boat has two children in it
 					{
 						bg.ChildRideToMolokai(); // passenger has also left to Molokai
 					}
@@ -172,7 +173,7 @@ public class Boat {
 					BoatAtOahu = false; // boat is now at Molokai
 				} else if (AmmChildrenAtOahu == 0) // if no children left at Oahu
 				{
-					// stay on Oahu (because 1 child must be the last to leave Oahu)
+					// stay on Oahu (because we need a child to leave Oahu)
 					BoatCapacity--; // empty out boat
 					OahuPopulation.acquire();
 					AmmChildrenAtOahu++; // add to the population of children at Oahu
@@ -180,7 +181,7 @@ public class Boat {
 					AtOahu = true; // staying at Oahu still
 				}
 			} else if (!BoatAtOahu && !AtOahu && BoatCapacity < 2 && !Done) {
-				bg.ChildRowToOahu(); // go back to Oahu
+				bg.ChildRowToOahu(); // return to Oahu
 				AtOahu = true; // now at Oahu
 				OahuPopulation.acquire();
 				Spawn.wakeAll();

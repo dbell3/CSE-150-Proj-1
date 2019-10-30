@@ -86,17 +86,16 @@ class TTime implements Comparable{
     }
     //Override compareTo method.
     //Only compare 2 TTime objects based on wakeTime
-    public int compareTo(TTime other){
-        if(wakeTime > other.wakeTime){
+    @Override
+    public int compareTo(Object other){
+    	TTime oTime = (TTime) other;
+        if(wakeTime > oTime.wakeTime){
             return 1;
-        }else if(wakeTime < other.wakeTime){
+        }else if(wakeTime < oTime.wakeTime){
             return -1;
         }else{
             return 0;
         }
-    }
-    public int compareTo(Object n) {
-    	return 0;
     }
     
 }

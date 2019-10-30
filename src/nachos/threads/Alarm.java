@@ -27,12 +27,12 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
-	    long currentTime = Machine.timer.getTime();
+	    long currentTime = Machine.timer().getTime();
 
         boolean interrupt = Machine.interrupt().disable();
 
         while(sleepingQueue.size() > 0 && sleepingQueue.peek().getTime() <= currentTime){
-            KThread t = sleepingQueue.poll();
+            KThread t = sleepingQueue.poll().getThread();
             t.ready();
         }
         KThread.yield();
@@ -57,7 +57,7 @@ public class Alarm {
     public void waitUntil(long x) {
 	    long wakeTime = Machine.timer().getTime() + x;
     
-        KThread t = currentThread;
+        KThread t = KThread.currentThread();
 
         boolean interrupt = Machine.interrupt().disable();
 
@@ -68,28 +68,34 @@ public class Alarm {
         Machine.interrupt().restore(interrupt);
     }
 
-    private PriorityQueue<TTime> sleepingQueue = new PriorityQueue<>();
+    private PriorityQueue<TTime> sleepingQueue = new PriorityQueue();
 }
 //Need to implement Comparable and override compareTo method since we plan on using this object in a priority queue
-private class TTime implements Comparable{
+class TTime implements Comparable{
     private KThread t;
     private long wakeTime;
     public TTime(KThread t, long wakeTime){
         this.t = t;
         this.wakeTime = wakeTime;
     }
-    public getTime(){
+    public long getTime (){
         return wakeTime;
+    }
+    public KThread getThread() {
+    	return t;
     }
     //Override compareTo method.
     //Only compare 2 TTime objects based on wakeTime
-    public int compareTo(TTime other){
-        if(wakeTime > other.wakeTime){
+    @Override
+    public int compareTo(Object other){
+    	TTime oTime = (TTime) other;
+        if(wakeTime > oTime.wakeTime){
             return 1;
-        }else if(wakeTime < other.wakeTime){
+        }else if(wakeTime < oTime.wakeTime){
             return -1;
         }else{
             return 0;
         }
     }
+    
 }

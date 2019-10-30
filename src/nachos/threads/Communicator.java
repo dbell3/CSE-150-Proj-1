@@ -26,7 +26,7 @@ public class Communicator {
     private int temp;
 
     public Communicator() {
-        //Initizlize Lock
+        //Initialize Lock
         lock = new Lock();
 
         //Initialize Condition Variables
@@ -61,7 +61,7 @@ public class Communicator {
 
         temp = word;
 
-        while(!istenerWaiting && messageRecieved){
+        while(!listenerWaiting && messageRecieved){
             listenerReceiveQueue.wake();
             speakerSpeakingQueue.sleep();
         }

@@ -282,7 +282,7 @@ public class KThread {
     //Only run if status is not finished
     if(this.status != statusFinished){
         //Create new ThreadQueue
-        ThreadQueue queue = new ThreadedKernel.scheduler.newThreadQueue(true);
+        ThreadQueue queue = ThreadedKernel.scheduler.newThreadQueue(true);
         //add this to queue
         queue.acquire(this);
         queue.waitForAccess(currentThread);

@@ -351,6 +351,55 @@ public class UserProcess {
         return 0;
     }
 
+    private int handleCreate(int virtualAdress){
+        if(virtualAdress < 0) return -1;
+
+        String filename = readVirtualMemoryString(virtualAdress, 256);
+
+        if(filename == null) return -1;
+
+        int freeSlot = -1;
+        for(int i = 0 ; i < 16; i++){
+            if(openFile[i] == null){
+                freeSlot = i;
+                break;
+            }
+        }
+
+        if(freeSlot == -1) return -1;
+
+        OpenFile file = ThreadedKernel.fileSystem.open(filename, true);
+
+        if(file == null) return -1;
+
+        openFiles[freeSlot] = file;
+        return freeSlot;
+    }
+
+    private int handleOpen(int virtualAdress){
+        if(virtualAdress < 0) return -1;
+
+        String filename = readVirtualMemoryString(virtualAdress, 256);
+
+        if(filename == null) return -1;
+
+        int freeSlot = -1;
+        for(int i = 0 ; i < 16; i++){
+            if(openFile[i] == null){
+                freeSlot = i;
+                break;
+            }
+        }
+
+        if(freeSlot == -1) return -1;
+
+        OpenFile file = ThreadedKernel.fileSystem.open(filename, false);
+
+        if(file == null) return -1;
+
+        openFiles[freeSlot] = file;
+        return freeSlot;
+    }
 
     private static final int
         syscallHalt = 0,

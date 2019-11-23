@@ -132,15 +132,30 @@ public class UserProcess {
 	Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 	byte[] memory = Machine.processor().getMemory();
-	
+	int bytesRead = 0;
 	// for now, just assume that virtual addresses equal physical addresses
-	if (vaddr < 0 || vaddr >= memory.length)
+	if (vaddr < 0 || vaddr >= memory.length) {
 	    return 0;
+    }
+    
+    while (bytesRead < length) {
+        
+        int vpn = (vaddr + bytesRead) / pageSize;                               //virtual page number
+        //int virtualOffset = (vaddr + bytesRead) % pageSize;                     //virtual offset
 
-	int amount = Math.min(length, memory.length-vaddr);
-	System.arraycopy(memory, vaddr, data, offset, amount);
+        TranslationEntry newEntry = pageTable[vpn];                             //new address translation
 
-	return amount;
+        int physicalAddress = newEntry.ppn * pageSize + offset;                 //calculating physical address
+        
+        int limit = (newEntry.ppn + 1) * pageSize;                              //memory access limit
+        int amount = Math.min(limit - physicalAddress, Math.min(length - bytesRead, memory.length - physicalAddress));  
+        System.arraycopy(memory, physicalAddress, data, offset + bytesRead, amount);    //copy data from process virtual memory to data array
+        bytesRead += amount;
+    }
+	//int amount = Math.min(length, memory.length-vaddr);
+	//System.arraycopy(memory, vaddr, data, offset, amount);
+
+	return bytesRead;
     }
 
     /**
@@ -175,15 +190,36 @@ public class UserProcess {
 	Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
 	byte[] memory = Machine.processor().getMemory();
-	
+	int bytesWritten = 0;
 	// for now, just assume that virtual addresses equal physical addresses
 	if (vaddr < 0 || vaddr >= memory.length)
 	    return 0;
+    
+    while (bytesWritten < length) {
+        
+        int vpn = (vaddr + bytesWritten) / pageSize;
+        int virtualOffset = (vaddr + bytesWritten) % pageSize;
 
-	int amount = Math.min(length, memory.length-vaddr);
-	System.arraycopy(data, offset, memory, vaddr, amount);
+        TranslationEntry newEntry = pageTable[vpn];
 
-	return amount;
+        if (newEntry.readOnly) 
+            return 0;
+
+        newEntry.used = true;
+
+        int physicalAddress = newEntry.ppn * pageSize + offset;
+
+        int pageLimit = (newEntry.ppn + 1) * pageSize;
+        int amount = Math.min(pageLimit - physicalAddress, Math.min(length - bytesWritten, memory.length - physicalAddress));
+        System.arraycopy(data, offset + bytesWritten, memory, physicalAddress, amount);
+        bytesWritten += amount;
+
+
+    }
+	//int amount = Math.min(length, memory.length-vaddr);
+	//System.arraycopy(data, offset, memory, vaddr, amount);
+
+	return bytesWritten;
     }
 
     /**

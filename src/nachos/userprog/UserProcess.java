@@ -5,6 +5,7 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import java.io.EOFException;
+import java.util.ArrayList;
 
 /**
  * Encapsulates the state of a user process that is not contained in its
@@ -25,8 +26,8 @@ public class UserProcess {
     public UserProcess() {
 	int numPhysPages = Machine.processor().getNumPhysPages();
 	pageTable = new TranslationEntry[numPhysPages];
-	for (int i=0; i<numPhysPages; i++)
-	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+	for (int i=0; i<numPhysPages; i++) {
+	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);}
     }
     
     /**
@@ -351,16 +352,16 @@ public class UserProcess {
         return 0;
     }
 
-    private int handleCreate(int virtualAdress){
-        if(virtualAdress < 0) return -1;
+    private int handleCreate(int virtualAddress){
+        if(virtualAddress < 0) return -1;
 
-        String filename = readVirtualMemoryString(virtualAdress, 256);
+        String filename = readVirtualMemoryString(virtualAddress, 256);
 
         if(filename == null) return -1;
 
         int freeSlot = -1;
         for(int i = 0 ; i < 16; i++){
-            if(openFile[i] == null){
+            if(openFiles[i] == null){
                 freeSlot = i;
                 break;
             }
@@ -376,16 +377,16 @@ public class UserProcess {
         return freeSlot;
     }
 
-    private int handleOpen(int virtualAdress){
-        if(virtualAdress < 0) return -1;
+    private int handleOpen(int virtualAddress){
+        if(virtualAddress < 0) return -1;
 
-        String filename = readVirtualMemoryString(virtualAdress, 256);
+        String filename = readVirtualMemoryString(virtualAddress, 256);
 
         if(filename == null) return -1;
 
         int freeSlot = -1;
         for(int i = 0 ; i < 16; i++){
-            if(openFile[i] == null){
+            if(openFiles[i] == null){
                 freeSlot = i;
                 break;
             }
@@ -399,6 +400,37 @@ public class UserProcess {
 
         openFiles[freeSlot] = file;
         return freeSlot;
+    }
+    
+    private int handleRead(int fd, int bufferAddress, int count) {
+    	return 1;
+    }
+    
+    private int handleWrite(int fd, int bufferAddress, int count) {
+    	return 1;
+    }
+    
+    private int handleClose(int fd) {
+    	return 1;
+    }
+    
+    private int handleUnlink(int nameAddress) {
+        if(nameAddress < 0) return -1;
+
+        String filename = readVirtualMemoryString(nameAddress, 256);
+
+        if(filename == null) return -1;
+        
+        OpenFile file = ThreadedKernel.fileSystem.open(filename, false);
+        
+        if (file == null) return -1;
+
+        openFiles.remove(file);
+        if(ThreadedKernel.fileSystem.remove(filename)) {
+    		return 1;
+    	}
+    	else return -1;
+    	
     }
 
     private static final int
@@ -445,6 +477,18 @@ public class UserProcess {
         switch (syscall) {
         case syscallHalt:
             return handleHalt();
+        case syscallCreate:
+        	return handleCreate(a0);
+        case syscallOpen:
+        	return handleOpen(a0);
+        case syscallRead:
+        	return handleRead(a0,a1,a2);
+        case syscallWrite:
+        	return handleWrite(a0,a1,a2);
+        case syscallClose:
+        	return handleClose(a0);
+        case syscallUnlink:
+        	return handleUnlink(a0);
 
 
         default:
@@ -486,6 +530,7 @@ public class UserProcess {
 
     /** The program being run by this process. */
     protected Coff coff;
+    protected int processID;
 
     /** This process's page table. */
     protected TranslationEntry[] pageTable;
@@ -497,6 +542,9 @@ public class UserProcess {
     
     private int initialPC, initialSP;
     private int argc, argv;
+    
+    private ArrayList<OpenFile> openFiles = new ArrayList<OpenFile>(16);
+    
 	
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';

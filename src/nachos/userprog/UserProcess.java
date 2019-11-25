@@ -359,22 +359,27 @@ public class UserProcess {
 
         if(filename == null) return -1;
 
-        int freeSlot = -1;
-        for(int i = 0 ; i < 16; i++){
-            if(openFiles[i] == null){
-                freeSlot = i;
-                break;
-            }
-        }
+        //With arraylist, no need to check for space remaining
 
-        if(freeSlot == -1) return -1;
+        // int freeSlot = -1;
+        // for(int i = 0 ; i < 16; i++){
+        //     if(openFiles[i] == null){
+        //         freeSlot = i;
+        //         break;
+        //     }
+        // }
+
+        // if(freeSlot == -1) return -1;
 
         OpenFile file = ThreadedKernel.fileSystem.open(filename, true);
 
         if(file == null) return -1;
 
-        openFiles[freeSlot] = file;
-        return freeSlot;
+        //openFiles[freeSlot] = file;
+
+        openFiles.add(file);
+
+        return 1;   //freeSlot;
     }
 
     private int handleOpen(int virtualAddress){
@@ -384,22 +389,27 @@ public class UserProcess {
 
         if(filename == null) return -1;
 
-        int freeSlot = -1;
-        for(int i = 0 ; i < 16; i++){
-            if(openFiles[i] == null){
-                freeSlot = i;
-                break;
-            }
-        }
 
-        if(freeSlot == -1) return -1;
+        // With Arraylist no need to check for space
+        // int freeSlot = -1;
+        // for(int i = 0 ; i < 16; i++){
+        //     if(openFiles[i] == null){
+        //         freeSlot = i;
+        //         break;
+        //     }
+        // }
+
+        //if(freeSlot == -1) return -1;
 
         OpenFile file = ThreadedKernel.fileSystem.open(filename, false);
 
         if(file == null) return -1;
 
-        openFiles[freeSlot] = file;
-        return freeSlot;
+        //openFiles[freeSlot] = file;
+
+        openFiles.add(file);
+
+        return 1;   // freeSlot;
     }
     
     private int handleRead(int fd, int bufferAddress, int count) {

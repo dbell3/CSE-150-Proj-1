@@ -413,15 +413,56 @@ public class UserProcess {
     }
     
     private int handleRead(int fd, int bufferAddress, int count) {
-    	return 1;
+        
+        if (fd < 0 || fd > openFiles.size()) return -1;
+
+        OpenFile f = openFiles.get(fd);
+
+        if(f == null) return -1;
+
+        if( count < 0) return -1;
+
+        byte[] buffer = new byte[count];
+
+        int bytesRead = f.read(buffer, 0, count);
+
+        if(bytesRead == -1) return -1;
+
+        return writeVirtualMemory(bufferAddress, buffer, 0, bytesRead);
     }
     
     private int handleWrite(int fd, int bufferAddress, int count) {
-    	return 1;
+        
+        if (fd < 0 || fd > openFiles.size()) return -1;
+        
+        OpenFile f = openFiles.get(fd);
+
+        if(f == null) return -1;
+
+        if(count < 0) return -1;
+
+        byte[] buffer = new byte[count];
+
+        int bytesWritten = readVirtualMemory(bufferAddress, buffer, 0, count);
+
+        int returnAmount = f.write(buffer, 0, bytesWritten);
+
+        return (returnAmount != count ? -1 : returnAmount);
+
     }
     
     private int handleClose(int fd) {
-    	return 1;
+        if (fd < 0 || fd > openFiles.size()) return -1;
+        
+        OpenFile f = openFiles.get(fd);
+        
+        if(f == null) return -1;
+
+        openFiles.remove(fd);
+
+        f.close();
+
+        return 0;
     }
     
     private int handleUnlink(int nameAddress) {

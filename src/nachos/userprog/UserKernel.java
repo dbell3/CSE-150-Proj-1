@@ -1,5 +1,6 @@
 package nachos.userprog;
 
+import java.util.LinkedList;
 import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
@@ -22,11 +23,19 @@ public class UserKernel extends ThreadedKernel {
     public void initialize(String[] args) {
 	super.initialize(args);
 
+	freePages = new LinkedList<Integer>();		//create linked list to track free pages
+	pageLock = new Lock();						
+	
 	console = new SynchConsole(Machine.console());
 	
 	Machine.processor().setExceptionHandler(new Runnable() {
 		public void run() { exceptionHandler(); }
 	    });
+	
+	for (int i = 0;  i < Machine.processor().getNumPhysPages(); i++) {		//initialize freePages list with all physical pages
+		freePages.add(i);
+	}
+	
     }
 
     /**
@@ -99,6 +108,20 @@ public class UserKernel extends ThreadedKernel {
 
 	KThread.currentThread().finish();
     }
+    
+    public static void addFreePage(int page) {		//add a free page to linked list
+    	pageLock.acquire();
+    	freePages.add(page);
+    	pageLock.release();
+    }
+    
+    public static int getFreePage() {				//return first free page and remove it from list
+    	pageLock.acquire();
+    	int freePage = freePages.getFirst();
+    	freePages.removeFirst();
+    	pageLock.release();
+    	return freePage;
+    }
 
     /**
      * Terminate this kernel. Never returns.
@@ -109,6 +132,9 @@ public class UserKernel extends ThreadedKernel {
 
     /** Globally accessible reference to the synchronized console. */
     public static SynchConsole console;
+    
+    private static LinkedList<Integer> freePages;
+    private static Lock pageLock;
 
     // dummy variables to make javac smarter
     private static Coff dummy1 = null;

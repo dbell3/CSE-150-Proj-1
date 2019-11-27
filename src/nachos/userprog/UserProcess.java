@@ -5,6 +5,7 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import java.io.EOFException;
+import java.util.ArrayList;
 
 /**
  * Encapsulates the state of a user process that is not contained in its
@@ -25,8 +26,8 @@ public class UserProcess {
     public UserProcess() {
 	int numPhysPages = Machine.processor().getNumPhysPages();
 	pageTable = new TranslationEntry[numPhysPages];
-	for (int i=0; i<numPhysPages; i++)
-	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+	for (int i=0; i<numPhysPages; i++) {
+	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);}
     }
     
     /**
@@ -395,13 +396,148 @@ public class UserProcess {
      * Handle the halt() system call. 
      */
     private int handleHalt() {
+        if(this.processID != 0){
+            // system.out.println("Program is not root.");
+            return 0;
+        }
 
-	Machine.halt();
-	
-	Lib.assertNotReached("Machine.halt() did not halt machine!");
-	return 0;
+        Machine.halt();
+        
+        Lib.assertNotReached("Machine.halt() did not halt machine!");
+        return 0;
     }
 
+    private int handleCreate(int virtualAddress){
+        if(virtualAddress < 0) return -1;
+
+        String filename = readVirtualMemoryString(virtualAddress, 256);
+
+        if(filename == null) return -1;
+
+        //With arraylist, no need to check for space remaining
+
+        // int freeSlot = -1;
+        // for(int i = 0 ; i < 16; i++){
+        //     if(openFiles[i] == null){
+        //         freeSlot = i;
+        //         break;
+        //     }
+        // }
+
+        // if(freeSlot == -1) return -1;
+
+        OpenFile file = ThreadedKernel.fileSystem.open(filename, true);
+
+        if(file == null) return -1;
+
+        //openFiles[freeSlot] = file;
+
+        openFiles.add(file);
+
+        return 1;   //freeSlot;
+    }
+
+    private int handleOpen(int virtualAddress){
+        if(virtualAddress < 0) return -1;
+
+        String filename = readVirtualMemoryString(virtualAddress, 256);
+
+        if(filename == null) return -1;
+
+
+        // With Arraylist no need to check for space
+        // int freeSlot = -1;
+        // for(int i = 0 ; i < 16; i++){
+        //     if(openFiles[i] == null){
+        //         freeSlot = i;
+        //         break;
+        //     }
+        // }
+
+        //if(freeSlot == -1) return -1;
+
+        OpenFile file = ThreadedKernel.fileSystem.open(filename, false);
+
+        if(file == null) return -1;
+
+        //openFiles[freeSlot] = file;
+
+        openFiles.add(file);
+
+        return 1;   // freeSlot;
+    }
+    
+    private int handleRead(int fd, int bufferAddress, int count) {
+        
+        if (fd < 0 || fd > openFiles.size()) return -1;
+
+        OpenFile f = openFiles.get(fd);
+
+        if(f == null) return -1;
+
+        if( count < 0) return -1;
+
+        byte[] buffer = new byte[count];
+
+        int bytesRead = f.read(buffer, 0, count);
+
+        if(bytesRead == -1) return -1;
+
+        return writeVirtualMemory(bufferAddress, buffer, 0, bytesRead);
+    }
+    
+    private int handleWrite(int fd, int bufferAddress, int count) {
+        
+        if (fd < 0 || fd > openFiles.size()) return -1;
+        
+        OpenFile f = openFiles.get(fd);
+
+        if(f == null) return -1;
+
+        if(count < 0) return -1;
+
+        byte[] buffer = new byte[count];
+
+        int bytesWritten = readVirtualMemory(bufferAddress, buffer, 0, count);
+
+        int returnAmount = f.write(buffer, 0, bytesWritten);
+
+        return (returnAmount != count ? -1 : returnAmount);
+
+    }
+    
+    private int handleClose(int fd) {
+        if (fd < 0 || fd > openFiles.size()) return -1;
+        
+        OpenFile f = openFiles.get(fd);
+        
+        if(f == null) return -1;
+
+        openFiles.remove(fd);
+
+        f.close();
+
+        return 0;
+    }
+    
+    private int handleUnlink(int nameAddress) {
+        if(nameAddress < 0) return -1;
+
+        String filename = readVirtualMemoryString(nameAddress, 256);
+
+        if(filename == null) return -1;
+        
+        OpenFile file = ThreadedKernel.fileSystem.open(filename, false);
+        
+        if (file == null) return -1;
+
+        openFiles.remove(file);
+        if(ThreadedKernel.fileSystem.remove(filename)) {
+    		return 1;
+    	}
+    	else return -1;
+    	
+    }
 
     private static final int
         syscallHalt = 0,
@@ -444,10 +580,21 @@ public class UserProcess {
      * @return	the value to be returned to the user.
      */
     public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
-	switch (syscall) {
-	case syscallHalt:
-	    return handleHalt();
-
+        switch (syscall) {
+        case syscallHalt:
+            return handleHalt();
+        case syscallCreate:
+        	return handleCreate(a0);
+        case syscallOpen:
+        	return handleOpen(a0);
+        case syscallRead:
+        	return handleRead(a0,a1,a2);
+        case syscallWrite:
+        	return handleWrite(a0,a1,a2);
+        case syscallClose:
+        	return handleClose(a0);
+        case syscallUnlink:
+        	return handleUnlink(a0);
 
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -488,6 +635,7 @@ public class UserProcess {
 
     /** The program being run by this process. */
     protected Coff coff;
+    protected int processID;
 
     /** This process's page table. */
     protected TranslationEntry[] pageTable;
@@ -499,6 +647,9 @@ public class UserProcess {
     
     private int initialPC, initialSP;
     private int argc, argv;
+    
+    private ArrayList<OpenFile> openFiles = new ArrayList<OpenFile>(16);
+    
 	
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';

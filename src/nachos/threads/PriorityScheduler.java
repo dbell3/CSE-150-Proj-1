@@ -116,7 +116,7 @@ public class PriorityScheduler extends Scheduler {
     /**
      * A <tt>ThreadQueue</tt> that sorts threads by priority.
      */
-    protected class PriorityQueue extends ThreadQueue {
+    public class PriorityQueue extends ThreadQueue {
         PriorityQueue(boolean transferPriority) {
             this.transferPriority = transferPriority;
         }
@@ -127,13 +127,17 @@ public class PriorityScheduler extends Scheduler {
             getThreadState(thread).waitForAccess(this);
         }
 
+        /**
+         * If transferPriority is true then
+         * make the Kthread the owner
+         */
         public void acquire(KThread thread) {
             Lib.assertTrue(Machine.interrupt().disabled());
 
             /** remove owner from resource list */
             if (owner != null 
             && transferPriority == true)
-                owner.lock.remove(this);
+                owner.threadStatePQ.remove(this);
 
             ThreadState st = getThreadState(thread);
             owner = st;
@@ -149,51 +153,55 @@ public class PriorityScheduler extends Scheduler {
                 return null;
 
             // remove owner
-            if (owner != null 
-            && transferPriority == true)
-                owner.lock.remove(this);
+            // if (owner != null 
+            // && transferPriority == true)
+            //     owner.threadStatePQ.remove(this);
 
-            ThreadState st = pickNextThreadState();
+            ThreadState st = pickHighestEffectiveState();
 
-            if (st != null) {
+            if(owner.getEffectivePriority() < st.getEffectivePriority())
+            {
+                owner.effectivePriority = st.effectivePriority;
+                return owner.thread;
+            }
+
+            if (st != null && transferPriority) {
                 waitQueue.remove(st);
                 st.acquire(this);
             }
 
 			Lib.debug(dbgQueue, printQueue());
             return st.thread;
-        }
+        } // PriorityQueue nextThread
 
-        /**
-         * Return the next thread that <tt>nextThread()</tt> would return, without
-         * modifying the state of this queue.
-         *
-         * @return the next thread that <tt>nextThread()</tt> would return.
-         */
-        protected ThreadState pickNextThreadState() {
+        protected ThreadState pickHighestEffectiveState() 
+        {
+            Lib.assertTrue(Machine.interrupt().disabled());
 
 			ThreadState temp = waitQueue.element();
 			int index = 0, out = 0;
 
 			// Search the whole list and pull the highest
-			for (ThreadState threadState : waitQueue) {
-				if(threadState.getEffectivePriority() > temp.getEffectivePriority()){
-					temp = threadState;
+            for (ThreadState st: waitQueue) 
+            {
+                if(st.getEffectivePriority() > temp.getEffectivePriority())
+                {
+					temp = st;
 					out = index;
 				}
 				index++;
 			}
 
 			// Remove ThreadState from queue
-			waitQueue.remove(out);
+            waitQueue.remove(out);
+            
             return temp;
         }
 
-        public int getEffectivePriority() {
-
-            if (transferPriority == false) {
+        public int getEffectivePriority() 
+        {
+            if (transferPriority == false)
                 return priorityMinimum;
-            }
 
             if (altered) 
             {
@@ -250,10 +258,10 @@ public class PriorityScheduler extends Scheduler {
         private int effectivePriority;
 
         /** The queue waiting on this resource */
-        private LinkedList<ThreadState> waitQueue = new LinkedList<ThreadState>(); 
+        protected LinkedList<ThreadState> waitQueue = new LinkedList<ThreadState>(); 
 
         /** The owner of the resources */
-        private ThreadState owner = null;
+        public ThreadState owner = null;
 
     } 
 
@@ -274,8 +282,8 @@ public class PriorityScheduler extends Scheduler {
          * @param thread the thread this state belongs to.
          */
         public ThreadState(KThread thread) {
+            Lib.assertTrue(Machine.interrupt().disabled());
             this.thread = thread;
-
             
 			if(Lib.test(dbgQueue))
 				setPriority((int)(Math.random()*7)+1);
@@ -289,26 +297,23 @@ public class PriorityScheduler extends Scheduler {
          * @return the priority of the associated thread.
          */
         public int getPriority() {
+            Lib.assertTrue(Machine.interrupt().disabled());
             return priority;
         }
 
-        /**
-         * Return the effective priority of the associated thread.
-         *
-         * @return the effective priority of the associated thread.
-         */
         public int getEffectivePriority() {
 
+            Lib.assertTrue(Machine.interrupt().disabled());
             int maxEffective = this.priority;
 
             if (altered) {
-                for(PriorityQueue pq: lock){
+                for(PriorityQueue pq: threadStatePQ)
+                {
                     int effective = pq.getEffectivePriority();
-                    if (maxEffective < effective) {
+                    if (maxEffective < effective)
                         maxEffective = effective;
-                    }
                 }
-            }
+            }// ThreadState getEffectivePriority
 
             return maxEffective;
         }
@@ -319,6 +324,7 @@ public class PriorityScheduler extends Scheduler {
          * @param priority the new priority.
          */
         public void setPriority(int priority) {
+            Lib.assertTrue(Machine.interrupt().disabled());
             if (this.priority == priority)
                 return;
 
@@ -342,6 +348,7 @@ public class PriorityScheduler extends Scheduler {
 
             Lib.assertTrue(Machine.interrupt().disabled());
 
+            // Add this thread state to the Priority wait queue
             pQueue.waitQueue.add(this);
             pQueue.changed();
 
@@ -349,8 +356,8 @@ public class PriorityScheduler extends Scheduler {
             wait = pQueue;
 
             // removed pQueue if already in
-            if (lock.indexOf(pQueue) != -1) {
-                lock.remove(pQueue);
+            if (threadStatePQ.indexOf(pQueue) != -1) {
+                threadStatePQ.remove(pQueue);
                 pQueue.owner = null;
             }
         }
@@ -369,26 +376,14 @@ public class PriorityScheduler extends Scheduler {
 
             Lib.assertTrue(Machine.interrupt().disabled());
 
-            // add waitQueue to myResource list
-            lock.add(waitQueue);
+            threadStatePQ.add(waitQueue);
 
-            // clean waitingOn if waitQueue is just waiting on
-            if (waitQueue == wait) {
+            if (waitQueue == wait)
                 wait = null;
-            }
 
-            // effective priority may be varied, set dirty flag
             changed();
         }
 
-        /**
-         * ThreadState.changed Set the dirty flag, then call setdirty() on each thread
-         * of priority queue that the thread is waiting for.
-         *
-         * ThreadState.changed and PriorityQueue.changed would invoke each other, they
-         * are mutually recursive.
-         *
-         */
         public void changed() {
             if (altered) {
                 return;
@@ -396,37 +391,27 @@ public class PriorityScheduler extends Scheduler {
 
             altered = true;
 
-            PriorityQueue pg = (PriorityQueue) wait;
-            if (pg != null) {
-                pg.changed();
+            PriorityQueue threadStatePQ = (PriorityQueue) wait;
+            if (threadStatePQ != null) {
+                threadStatePQ.changed();
             }
         }
 
-        /** The thread with which this object is associated. */
+        /******************************/
+        /**  ThreadState variables  **/
+        /****************************/
         protected KThread thread;
 
-        /** The priority of the associated thread. */
         protected int priority;
 
         protected int effectivePriority; 
 
-        /**
-         * Collection of PriorityQueues that signify the Locks or other resource that
-         * this thread currently holds
-         */
-        protected LinkedList<PriorityQueue> lock = new LinkedList<PriorityQueue>();
+        protected LinkedList<PriorityQueue> threadStatePQ = new LinkedList<PriorityQueue>();
 
-        /**
-         * PriorityQueue corresponding to resources that this thread has attepmted to
-         * acquire but could not
-         */
         protected PriorityQueue wait;
 
-        /**
-         * Set to true when this thread's priority is changed, or when one of the queues
-         * in myResources flags itself as dirty
-         */
         private boolean altered = false; 
     }
-	private static final char dbgQueue = 'q';
+
+    private static final char dbgQueue = 'q';
 }

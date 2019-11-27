@@ -42,7 +42,7 @@ public class LotteryScheduler extends PriorityScheduler {
      * @return	a new lottery thread queue.
      */
     public ThreadQueue newThreadQueue(boolean transferPriority) {
-	// implement me
-	return null;
+        // implement me
+        return null;
     }
 }

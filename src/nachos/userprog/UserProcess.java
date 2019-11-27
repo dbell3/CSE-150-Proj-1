@@ -464,7 +464,7 @@ public class UserProcess {
 
         openFiles.add(file);
 
-        return 1;   // freeSlot;
+        return openFiles.indexOf(file);   // freeSlot;
     }
     
     private int handleRead(int fd, int bufferAddress, int count) {

@@ -292,6 +292,9 @@ public class PriorityScheduler extends Scheduler {
 			if (this.priority == priority)
 				return;
 
+			if(priority > effectivePriority)
+				setEffectivePriority(priority);
+
 			this.priority = priority;
 		}
 

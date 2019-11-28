@@ -27,12 +27,27 @@ import java.util.Iterator;
  * the maximum).
  */
 public class LotteryScheduler extends PriorityScheduler {
-    /**
-     * Allocate a new lottery scheduler.
-     */
-    public LotteryScheduler() {
+
+    public static void selfTest()
+    {
+        boolean machine_start_status = Machine.interrupt().disabled();
+        Machine.interrupt().disable();
+
+        LotteryScheduler ls = new LotteryScheduler();
+        ThreadQueue tq = ls.newThreadQueue(true);
+
+        KThread k1 = new KThread();
+        KThread k2 = new KThread();
+
+        tq.acquire(k1);
+        tq.waitForAccess(k2);
+
+        ls.setPriority(k2,67519053);
+
+        KThread thread = tq.nextThread();
+        System.out.println(thread.getName() + "\n ");
+        Machine.interrupt().restore(machine_start_status);
     }
-    
     /**
      * Allocate a new lottery thread queue.
      *

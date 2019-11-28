@@ -408,11 +408,11 @@ public class UserProcess {
     }
 
     private int handleCreate(int virtualAddress){
-        if(virtualAddress < 0) return -1;
+        if(virtualAddress < 0) return -1;								//Test for invalid virtualAddress
 
-        String filename = readVirtualMemoryString(virtualAddress, 256);
+        String filename = readVirtualMemoryString(virtualAddress, 256);	//get filename
 
-        if(filename == null) return -1;
+        if(filename == null) return -1;									//Verify that filename is valid
 
         //With arraylist, no need to check for space remaining
 
@@ -426,9 +426,9 @@ public class UserProcess {
 
         // if(freeSlot == -1) return -1;
 
-        OpenFile file = ThreadedKernel.fileSystem.open(filename, true);
+        OpenFile file = ThreadedKernel.fileSystem.open(filename, true);	//open file
 
-        if(file == null) return -1;
+        if(file == null) return -1;										//verify that file was opened
 
         //openFiles[freeSlot] = file;
 
@@ -438,11 +438,11 @@ public class UserProcess {
     }
 
     private int handleOpen(int virtualAddress){
-        if(virtualAddress < 0) return -1;
+    	if(virtualAddress < 0) return -1;								//Test for invalid virtualAddress
 
-        String filename = readVirtualMemoryString(virtualAddress, 256);
+        String filename = readVirtualMemoryString(virtualAddress, 256);	//get filename
 
-        if(filename == null) return -1;
+        if(filename == null) return -1;									//Verify that filename is valid
 
 
         // With Arraylist no need to check for space
@@ -456,9 +456,9 @@ public class UserProcess {
 
         //if(freeSlot == -1) return -1;
 
-        OpenFile file = ThreadedKernel.fileSystem.open(filename, false);
+        OpenFile file = ThreadedKernel.fileSystem.open(filename, false);	//open file
 
-        if(file == null) return -1;
+        if(file == null) return -1;										//verify that file was opened
 
         //openFiles[freeSlot] = file;
 
@@ -469,73 +469,73 @@ public class UserProcess {
     
     private int handleRead(int fd, int bufferAddress, int count) {
         
-        if (fd < 0 || fd > openFiles.size()) return -1;
+        if (fd < 0 || fd > openFiles.size()) return -1;					//check for valid file Index
 
-        OpenFile f = openFiles.get(fd);
+        OpenFile f = openFiles.get(fd);									//get file
 
-        if(f == null) return -1;
+        if(f == null) return -1;										//check valid file
 
-        if( count < 0) return -1;
+        if( count < 0) return -1;										//check if count is valid
 
-        byte[] buffer = new byte[count];
+        byte[] buffer = new byte[count];								//array that we are writing to
 
-        int bytesRead = f.read(buffer, 0, count);
+        int bytesRead = f.read(buffer, 0, count);						//read bytes
 
-        if(bytesRead == -1) return -1;
+        if(bytesRead == -1) return -1;									//verify that bytes have been read
 
-        return writeVirtualMemory(bufferAddress, buffer, 0, bytesRead);
+        return writeVirtualMemory(bufferAddress, buffer, 0, bytesRead);	//write bytes to memory and return
     }
     
     private int handleWrite(int fd, int bufferAddress, int count) {
         
-        if (fd < 0 || fd > openFiles.size()) return -1;
+        if (fd < 0 || fd > openFiles.size()) return -1;							//check for valid file Index
         
-        OpenFile f = openFiles.get(fd);
+        OpenFile f = openFiles.get(fd);											//get file
 
-        if(f == null) return -1;
+        if(f == null) return -1;												//check valid file
 
-        if(count < 0) return -1;
+        if(count < 0) return -1;												//check if count is valid
 
-        byte[] buffer = new byte[count];
+        byte[] buffer = new byte[count];										//array that we are writing from
 
-        int bytesWritten = readVirtualMemory(bufferAddress, buffer, 0, count);
+        int bytesWritten = readVirtualMemory(bufferAddress, buffer, 0, count);	//read bytes from memory
 
-        int returnAmount = f.write(buffer, 0, bytesWritten);
+        int returnAmount = f.write(buffer, 0, bytesWritten);					//write bytes
 
-        return (returnAmount != count ? -1 : returnAmount);
+        return (returnAmount != count ? -1 : returnAmount);						//verify that bytes have been written
 
     }
     
     private int handleClose(int fd) {
-        if (fd < 0 || fd > openFiles.size()) return -1;
+        if (fd < 0 || fd > openFiles.size()) return -1;	//check for valid file Index
         
-        OpenFile f = openFiles.get(fd);
+        OpenFile f = openFiles.get(fd);					//get file
         
-        if(f == null) return -1;
+        if(f == null) return -1;						//check valid file
 
-        openFiles.remove(fd);
+        openFiles.remove(fd);							//remove file from list of open files
 
-        f.close();
+        f.close();										//close file
 
         return 0;
     }
     
     private int handleUnlink(int nameAddress) {
-        if(nameAddress < 0) return -1;
+        if(nameAddress < 0) return -1;										//Test for invalid virtualAddress
 
-        String filename = readVirtualMemoryString(nameAddress, 256);
+        String filename = readVirtualMemoryString(nameAddress, 256);		//get filename
 
-        if(filename == null) return -1;
+        if(filename == null) return -1;										//Verify that filename is valid
         
-        OpenFile file = ThreadedKernel.fileSystem.open(filename, false);
+        OpenFile file = ThreadedKernel.fileSystem.open(filename, false);	//get file
         
-        if (file == null) return -1;
+        if (file == null) return -1;										//check valid file
 
-        openFiles.remove(file);
-        if(ThreadedKernel.fileSystem.remove(filename)) {
+        openFiles.remove(file);												//if file is in openFiles, remove from list
+        if(ThreadedKernel.fileSystem.remove(filename)) {					//remove file from file system
     		return 1;
     	}
-    	else return -1;
+    	else return -1;														//verify file removed
     	
     }
 
@@ -648,6 +648,7 @@ public class UserProcess {
     private int initialPC, initialSP;
     private int argc, argv;
     
+  /** ArrayList for storing OpenFiles. */
     private ArrayList<OpenFile> openFiles = new ArrayList<OpenFile>(16);
     
 	

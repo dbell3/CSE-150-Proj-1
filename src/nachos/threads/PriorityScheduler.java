@@ -5,13 +5,52 @@ import java.util.LinkedList;
 
 public class PriorityScheduler extends Scheduler {
 
-    /**
-     * Allocate a new priority thread queue.
-     *
-     * @param transferPriority <tt>true</tt> if this queue should transfer priority
-     *                         from waiting threads to the owning thread.
-     * @return a new priority thread queue.
-     */
+     public static void selfTest()
+    {
+        boolean machine_start_status = Machine.interrupt().disabled();
+        Machine.interrupt().disable();
+
+        PriorityScheduler ls = new PriorityScheduler();
+        ThreadQueue tq = ls.newThreadQueue(true);
+
+        KThread t1 = new KThread();
+        t1.setName("t1");
+        KThread t2 = new KThread();
+        t2.setName("t2");
+
+        KThread t3 = new KThread();
+        t3.setName("t3");
+        KThread t4 = new KThread();
+        t4.setName("t4");
+        KThread t5 = new KThread();
+        t5.setName("t5");
+
+        tq.acquire(t1);
+        tq.waitForAccess(t2);
+        tq.waitForAccess(t3);
+        tq.waitForAccess(t4);
+        tq.waitForAccess(t5);
+
+        // This could be done with a loop, but I'm to lazy
+        // int random = (int) Math.random() * 10;
+        ls.setPriority(t1,0);
+        // random = (int) Math.random() * 40;
+        ls.setPriority(t2,1);
+        // random = (int) Math.random() * 239;
+        ls.setPriority(t3,3);
+        // random = (int) Math.random() * 5;
+        ls.setPriority(t4,6);
+
+        KThread thread = tq.nextThread();
+        while(thread != null)
+        {
+            System.out.print(thread.getName() + " ");
+            thread = tq.nextThread();
+        }
+        System.out.println("\n");
+        Machine.interrupt().restore(machine_start_status);
+    }
+
     public ThreadQueue newThreadQueue(boolean transferPriority) {
         return new PriorityQueue(transferPriority);
     }
@@ -31,8 +70,7 @@ public class PriorityScheduler extends Scheduler {
     public void setPriority(KThread thread, int priority) {
         Lib.assertTrue(Machine.interrupt().disabled());
 
-        Lib.assertTrue(priority >= priorityMinimum 
-        && priority <= priorityMaximum);
+        Lib.assertTrue(priority >= priorityMinimum && priority <= priorityMaximum);
 
         getThreadState(thread).setPriority(priority);
     }
@@ -70,15 +108,15 @@ public class PriorityScheduler extends Scheduler {
     /**
      * The default priority for a new thread. Do not change this value.
      */
-    public static final int priorityDefault = 1;
+    public static int priorityDefault = 1;
     /**
      * The minimum priority that a thread can have. Do not change this value.
      */
-    public static final int priorityMinimum = 0;
+    public static int priorityMinimum = 0;
     /**
      * The maximum priority that a thread can have. Do not change this value.
      */
-    public static final int priorityMaximum = 7;
+    public static int priorityMaximum = 7;
 
     /**
      * Return the scheduling state of the specified thread.
@@ -141,7 +179,7 @@ public class PriorityScheduler extends Scheduler {
             }
 
 			Lib.debug(dbgQueue, printQueue());
-            return st.thread;
+            return owner.thread;
         }
 
         /**
@@ -230,10 +268,10 @@ public class PriorityScheduler extends Scheduler {
         private int effectivePriority;
 
         /** The queue waiting on this resource */
-        private LinkedList<ThreadState> waitQueue = new LinkedList<ThreadState>(); 
+        public LinkedList<ThreadState> waitQueue = new LinkedList<ThreadState>(); 
 
         /** The owner of the resources */
-        private ThreadState owner = null;
+        public ThreadState owner = null;
 
     } 
 
@@ -258,7 +296,7 @@ public class PriorityScheduler extends Scheduler {
 
             
 			if(Lib.test(dbgQueue))
-				setPriority((int)(Math.random()*7)+1);
+				setPriority((int)(Math.random()*priorityMaximum)+priorityDefault);
 			else
 				setPriority(priorityDefault);
         }
@@ -279,18 +317,18 @@ public class PriorityScheduler extends Scheduler {
          */
         public int getEffectivePriority() {
 
-            int maxEffective = this.priority;
+            int tmp = this.priority;
 
             if (altered) {
                 for(PriorityQueue pq: lock){
                     int effective = pq.getEffectivePriority();
-                    if (maxEffective < effective) {
-                        maxEffective = effective;
+                    if (tmp < effective) {
+                        tmp = effective;
                     }
                 }
             }
 
-            return maxEffective;
+            return tmp;
         }
 
         /**

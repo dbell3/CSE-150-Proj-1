@@ -179,7 +179,7 @@ public class PriorityScheduler extends Scheduler {
             }
 
 			Lib.debug(dbgQueue, printQueue());
-            return st.thread;
+            return owner.thread;
         }
 
         /**

@@ -3,6 +3,29 @@ import nachos.machine.*;
 
 import java.util.LinkedList;
 
+<<<<<<< HEAD
+=======
+/**
+ * A scheduler that chooses threads based on their priorities.
+ *
+ * <p>
+ * A priority scheduler associates a priority with each thread. The next thread
+ * to be dequeued is always a thread with priority no less than any other
+ * waiting thread's priority. Like a round-robin scheduler, the thread that is
+ * dequeued is, among all the threads of the same (highest) priority, the
+ * thread that has been waiting longest.
+ *
+ * <p>
+ * Essentially, a priority scheduler gives access in a round-robin fassion to
+ * all the highest-priority threads, and ignores all other threads. This has
+ * the potential to starve a thread if there's always a thread waiting 
+ * with higher priority.
+ *
+ * <p>
+ * A priority scheduler must partially solve the priority inversion problem; in
+ * particular, priority must be donated through locks, and through joins.
+ */
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 public class PriorityScheduler extends Scheduler {
     /**
      * Allocate a new priority scheduler.
@@ -47,6 +70,7 @@ public class PriorityScheduler extends Scheduler {
 		boolean intStatus = Machine.interrupt().disable();
 				
 		KThread thread = KThread.currentThread();
+<<<<<<< HEAD
 
 		int priority = getPriority(thread);
 		if (priority == priorityMaximum)
@@ -54,6 +78,15 @@ public class PriorityScheduler extends Scheduler {
 
 		setPriority(thread, priority+1);
 
+=======
+
+		int priority = getPriority(thread);
+		if (priority == priorityMaximum)
+			return false;
+
+		setPriority(thread, priority+1);
+
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 		Machine.interrupt().restore(intStatus);
 		return true;
     }
@@ -111,6 +144,7 @@ public class PriorityScheduler extends Scheduler {
 		public void waitForAccess(KThread thread) {
 			//Disable interrupts
 			Lib.assertTrue(Machine.interrupt().disabled());
+<<<<<<< HEAD
 
 			// Make a thread state from the thread
 			ThreadState st = getThreadState(thread);
@@ -123,10 +157,15 @@ public class PriorityScheduler extends Scheduler {
 
 			if(st.getEffectivePriority() > owner.getEffectivePriority())
 				owner.setEffectivePriority(st.getEffectivePriority());
+=======
+
+			getThreadState(thread).waitForAccess(this);
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 
 			// Lib.debug(dbgQueue, thread.getName() + " release lock");
 			Lib.debug(dbgQueue, printQueue());
 		}
+<<<<<<< HEAD
 
 		public void acquire(KThread thread) {
             Lib.assertTrue(Machine.interrupt().disabled());
@@ -152,6 +191,22 @@ public class PriorityScheduler extends Scheduler {
 			else
 				thread = pickNextThread().thread;
 
+=======
+
+		public void acquire(KThread thread) {
+			Lib.assertTrue(Machine.interrupt().disabled());
+			getThreadState(thread).acquire(this);
+		}
+
+		public KThread nextThread() {
+			Lib.assertTrue(Machine.interrupt().disabled());
+			
+			// If waitQueue is empty
+			if (waitQueue.isEmpty())
+				return null;
+
+			KThread thread = pickNextThread().thread;
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 
 			Lib.debug(dbgQueue, printQueue());
 			// Lib.debug(dbgQueue, thread.getName() + " grabing lock");
@@ -169,12 +224,29 @@ public class PriorityScheduler extends Scheduler {
 
 			// Make sure that the Queue is not empty
 			if (waitQueue.isEmpty())
+<<<<<<< HEAD
+=======
+				// If it is then return null
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 				return null;
 
 			ThreadState temp = waitQueue.element();
+			ThreadState starvingThread = temp;
 			int index = 0, out = 0;
+<<<<<<< HEAD
 			// Search the whole list and pull the highest effective priority
 			for (ThreadState threadState : waitQueue) {
+=======
+
+			// int currentTime = (int) Machine.timer().getTime();
+			// Search the whole list and pull the highest
+			for (ThreadState threadState : waitQueue) {
+				// find the starving thread 
+				if(threadState.createdTime < starvingThread.createdTime && 
+				threadState.priority < starvingThread.priority){
+					starvingThread = threadState;
+				}
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 
 				if(threadState.getEffectivePriority() > temp.getEffectivePriority()){
 					temp = threadState;
@@ -182,6 +254,11 @@ public class PriorityScheduler extends Scheduler {
 				}
 				index++;
 			}
+
+			// Increase priority of starving thread 
+			if(starvingThread.getEffectivePriority() <= priorityMaximum && transferPriority)
+				starvingThread.setPriority(priorityMaximum);
+				// starvingThread.setPriority(starvingThread.getEffectivePriority()+1);
 
 			// Remove ThreadState from queue
 			waitQueue.remove(out);
@@ -205,13 +282,17 @@ public class PriorityScheduler extends Scheduler {
 			return temp;
 		}
 
+<<<<<<< HEAD
 		/*****************************/
 		/**  PriorityQueue variables */
 		/*****************************/
+=======
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 		/**
 		 * <tt>true</tt> if this queue should transfer priority from waiting threads to
 		 * the owning thread.
 		 */
+<<<<<<< HEAD
         public boolean transferPriority;
         
         /** owner of Queue */
@@ -220,11 +301,22 @@ public class PriorityScheduler extends Scheduler {
 
         private LinkedList<ThreadState> waitQueue = new LinkedList<ThreadState>();
 
+=======
+		public boolean transferPriority;
+
+		/** Queue to that keeps the threads */
+		private LinkedList<ThreadState> waitQueue = new LinkedList<ThreadState>();
+
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 		// @Override
 		public void print() {
 			// TODO Auto-generated method stub
 
+<<<<<<< HEAD
         }
+=======
+		}
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 	}
 
     /**
@@ -244,14 +336,38 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public ThreadState(KThread thread) {
 			this.thread = thread;
+<<<<<<< HEAD
+=======
+
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 			// setting random Priorities for testing purposes
 			if(Lib.test(dbgQueue))
 				setPriority((int)(Math.random()*7)+1);
 			else
 				setPriority(priorityDefault);
 
+<<<<<<< HEAD
 		}
 
+=======
+			this.createdTime = (int) Machine.timer().getTime();
+		}
+
+		/**
+		 * CompareTo method is needed in order to use TreeSet
+		 * We want to use a Treeset because it automatically sorts
+		 * by highest priority
+		 */
+		public int compareTo(Object o) {
+			ThreadState tstate = (ThreadState) o;
+
+			if (priority < tstate.priority)
+				return -1;
+			else if (priority > tstate.priority)
+				return 1;
+			else return 0; 
+		}
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 
 		/**
 		 * Return the priority of the associated thread.
@@ -268,6 +384,7 @@ public class PriorityScheduler extends Scheduler {
 		 *
 		 * @return the effective priority of the associated thread.
 		 */
+<<<<<<< HEAD
 		public int getEffectivePriority() 
 		{
 			// implement me
@@ -281,6 +398,26 @@ public class PriorityScheduler extends Scheduler {
 				effectivePriority = newPriority;
 
 			return effectivePriority;
+=======
+		public int getEffectivePriority() {
+			// implement me
+			Lib.assertTrue(Machine.interrupt().disabled());
+		
+			// System.out.println(Machine.timer().getTime());
+			
+			// int effectivePriority;
+			// if (!transferPriority) {
+			// 	return priorityMinimum;
+			// }else {
+			// 	effectivePriority = priority;
+			// 	for(ThreadState threadState : waitQueue) {
+			// 		effectivePriority = threadState.priority;
+			// 	}
+			// 	transferPriority = false;
+			// 	return effectivePriority;
+			// }
+			return priority;
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 		}
 
 		/**
@@ -312,6 +449,7 @@ public class PriorityScheduler extends Scheduler {
 			pQueue.waitQueue.add(this);
 		}
 
+<<<<<<< HEAD
 		// /**
 		//  * Called when the associated thread has acquired access to whatever is guarded
 		//  * by <tt>waitQueue</tt>. This can occur either as a result of
@@ -336,6 +474,29 @@ public class PriorityScheduler extends Scheduler {
 
 		protected int effectivePriority = 0;
 
+=======
+		/**
+		 * Called when the associated thread has acquired access to whatever is guarded
+		 * by <tt>waitQueue</tt>. This can occur either as a result of
+		 * <tt>acquire(thread)</tt> being invoked on <tt>waitQueue</tt> (where
+		 * <tt>thread</tt> is the associated thread), or as a result of
+		 * <tt>nextThread()</tt> being invoked on <tt>waitQueue</tt>.
+		 *
+		 * @see nachos.threads.ThreadQueue#acquire
+		 * @see nachos.threads.ThreadQueue#nextThread
+		 */
+		public void acquire(PriorityQueue pQueue) {
+			Lib.assertTrue(Machine.interrupt().disabled());
+
+			Lib.assertTrue(pQueue.waitQueue.isEmpty());
+		}
+
+		/** The thread with which this object is associated. */
+		protected KThread thread;
+		/** The priority of the associated thread. */
+		protected int priority;
+
+>>>>>>> parent of 44d878f... Finally getting Priority scheduling to work right
 		protected int createdTime;
 	}
 

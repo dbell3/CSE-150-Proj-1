@@ -507,35 +507,35 @@ public class UserProcess {
     }
     
     private int handleClose(int fd) {
-        if (fd < 0 || fd > openFiles.size()) return -1;
+        if (fd < 0 || fd > openFiles.size()) return -1;	//check for valid file Index
         
-        OpenFile f = openFiles.get(fd);
+        OpenFile f = openFiles.get(fd);					//get file
         
-        if(f == null) return -1;
+        if(f == null) return -1;						//check valid file
 
-        openFiles.remove(fd);
+        openFiles.remove(fd);							//remove file from list of open files
 
-        f.close();
+        f.close();										//close file
 
         return 0;
     }
     
     private int handleUnlink(int nameAddress) {
-        if(nameAddress < 0) return -1;
+        if(nameAddress < 0) return -1;										//Test for invalid virtualAddress
 
-        String filename = readVirtualMemoryString(nameAddress, 256);
+        String filename = readVirtualMemoryString(nameAddress, 256);		//get filename
 
-        if(filename == null) return -1;
+        if(filename == null) return -1;										//Verify that filename is valid
         
-        OpenFile file = ThreadedKernel.fileSystem.open(filename, false);
+        OpenFile file = ThreadedKernel.fileSystem.open(filename, false);	//get file
         
-        if (file == null) return -1;
+        if (file == null) return -1;										//check valid file
 
-        openFiles.remove(file);
-        if(ThreadedKernel.fileSystem.remove(filename)) {
+        openFiles.remove(file);												//if file is in openFiles, remove from list
+        if(ThreadedKernel.fileSystem.remove(filename)) {					//remove file from file system
     		return 1;
     	}
-    	else return -1;
+    	else return -1;														//verify file removed
     	
     }
 

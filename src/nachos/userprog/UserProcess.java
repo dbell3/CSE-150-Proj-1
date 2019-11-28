@@ -582,33 +582,6 @@ public class UserProcess {
     // * 5. unload coff sections and release memory pages
     // * 6. finish associated thread
     // *
-    private void handleExit(int exitStatus) {
-
-        // close open file descriptors belonging to the process
-        for (int i = 0; i < MAXFD; i++) {
-            if (fds[i].file != null)
-                handleClose(i);
-        }
-        // set any children of the process no longer have a parent process(null)
-        while (children != null && !children.isEmpty()) {
-            int childPid = children.removeFirst();
-            UserProcess childProcess = UserKernel.getProcessByID(childPid);
-            childProcess.ppid = ROOT;
-        }
-
-        // set the process's exit status to status that caller specifies(normal)
-        // unloadSections and release memory pages
-        this.unloadSections();
-        // finish associated thread
-        if (this.pid == ROOT) {
-            Kernel.kernel.terminate();
-        } else {
-            Lib.assertTrue(KThread.currentThread() == this.thread);
-            KThread.currentThread().finish();
-        }
-
-        Lib.assertNotReached();
-    }
 
     // Disclaimer: This code was not properly merged, it was developed independently
     // and appears to be unsynct with group.
@@ -652,37 +625,6 @@ public class UserProcess {
     // invoke UserProcess.execute to load executable file and create new UThread
     // + If normal, return new process's pid.
     // + Otherwise, on error return -1.
-    private int handleExec(int file, int argc, int argv) {
-
-        String filename = readVirtualMemoryString(file, MAXSTRLEN);
-
-        // filename doesn't have the ".coff" extension
-        String suffix = filename.substring(filename.length() - 4, filename.length());
-        if (suffix.equals(".coff")) {
-            Lib.debug(dbgProcess, "handleExec(): filename doesn't have the " + coff + " extension");
-            return -1;
-        }
-
-        // get args from address of argv
-        String args[] = new String[argc];
-        byte temp[] = new byte[4];
-        for (int i = 0; i < argc; i++) {
-            int cntBytes = readVirtualMemory(argv + i * 4, temp);
-            if (cntBytes != 4) {
-                return -1;
-            }
-            int argAddress = Lib.bytesToInt(temp, 0);
-            args[i] = readVirtualMemoryString(argAddress, MAXSTRLEN);
-        }
-        // invoke UserProcess.execute to load executable and create a new UThread
-        boolean retval = childProcess.execute(filename, args);
-
-        if (retval) {
-            return childProcess.pid;
-        } else {
-            return -1;
-        }
-    }
 
     // *Disclaimer: This code was not properly merged, it was developed
     // independently and appears to be unsynct with group.
@@ -727,38 +669,6 @@ public class UserProcess {
     // * returns 1;
     // * Else If the child exited as a result of an unhandled exception,
     // * returns 0;
-    private int handleJoin(int childpid, int adrStatus) {
-        Lib.debug(dbgProcess, "handleJoin()");
-
-        // remove child's pid in parent's children list
-        boolean childFlag = false;
-        int tmp = 0;
-        Iterator<Integer> it = this.children.iterator();
-        while (it.hasNext()) {
-            tmp = it.next();
-            if (tmp == childpid) {
-                it.remove();
-                childFlag = true;
-                break;
-            }
-        }
-
-        UserProcess childProcess = UserKernel.getProcessByID(childpid);
-        // child process's thread joins current thread
-        childProcess.thread.join();
-        // we needn't the object of child process after invoking join,so unregister it
-        // in kernel's process map
-        UserKernel.unregisterProcess(childpid);
-
-        // store the exit status to status pointed by the second argument
-        byte temp[] = new byte[4];
-        temp = Lib.bytesFromInt(childProcess.exitStatus);
-        int cntBytes = writeVirtualMemory(adrStatus, temp);
-        if (cntBytes != 4)
-            return 1;
-        else
-            return 0;
-    }
 
     private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2, syscallJoin = 3, syscallCreate = 4,
             syscallOpen = 5, syscallRead = 6, syscallWrite = 7, syscallClose = 8, syscallUnlink = 9;

@@ -3,26 +3,6 @@ package nachos.threads;
 import nachos.machine.*;
 import java.util.LinkedList; 
 
-/**
- * A scheduler that chooses threads based on their priorities.
- *
- * <p>
- * A priority scheduler associates a priority with each thread. The next thread
- * to be dequeued is always a thread with priority no less than any other
- * waiting thread's priority. Like a round-robin scheduler, the thread that is
- * dequeued is, among all the threads of the same (highest) priority, the
- * thread that has been waiting longest.
- *
- * <p>
- * Essentially, a priority scheduler gives access in a round-robin fassion to
- * all the highest-priority threads, and ignores all other threads. This has
- * the potential to starve a thread if there's always a thread waiting 
- * with higher priority.
- *
- * <p>
- * A priority scheduler must partially solve the priority inversion problem; in
- * particular, priority must be donated through locks, and through joins.
- */
 public class PriorityScheduler extends Scheduler {
 
     /**
@@ -340,36 +320,6 @@ public class PriorityScheduler extends Scheduler {
          */
         public void waitForAccess(PriorityQueue pQueue) {
 
-<<<<<<< HEAD
-		/**
-		 * Set the priority of the associated thread to the specified value.
-		 *
-		 * @param priority the new priority.
-		 */
-		public void setPriority(int priority) {
-			if (this.priority == priority)
-				return;
-
-			if(priority > effectivePriority)
-				setEffectivePriority(priority);
-
-			this.priority = priority;
-		}
-
-		/**
-		 * Called when <tt>waitForAccess(thread)</tt> (where <tt>thread</tt> is the
-		 * associated thread) is invoked on the specified priority queue. The associated
-		 * thread is therefore waiting for access to the resource guarded by
-		 * <tt>waitQueue</tt>. This method is only called if the associated thread
-		 * cannot immediately obtain access.
-		 *
-		 * @param waitQueue the queue that the associated thread is now waiting on.
-		 *
-		 * @see nachos.threads.ThreadQueue#waitForAccess
-		 */
-		public void waitForAccess(PriorityQueue pQueue) {
-			Lib.assertTrue(Machine.interrupt().disabled());
-=======
             Lib.assertTrue(Machine.interrupt().disabled());
 
             pQueue.waitQueue.add(this);
@@ -384,7 +334,6 @@ public class PriorityScheduler extends Scheduler {
                 pQueue.owner = null;
             }
         }
->>>>>>> part2-lottery
 
         /**
          * Called when the associated thread has acquired access to whatever is guarded
